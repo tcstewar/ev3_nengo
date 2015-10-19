@@ -55,13 +55,17 @@ class Ultrasonic(Sensor):
     def read(self):
         value = self.ev3.read('%s/value0' % self.path,
                               msg_period=self.msg_period)
-        return float(value) / 255
+        try:
+            return float(value) / 255
+        except:
+            return 0
 
 class TachoMotor(Motor):
     class_dir = 'tacho-motor'
 
     def initialize(self):
         self.ev3.write('%s/command' % self.path, 'run-direct')
+        self.ev3.on_no_message(self.stop)
 
     def set_power(self, value):
         value = '%d' % max(min(int(value * 100), 100), -100)
@@ -79,39 +83,6 @@ class TachoMotor(Motor):
         self.ev3.write('%s/duty_cycle_sp' % self.path, '0')
 
     
-
-
-class EV3(object):
-    def __init__(self, link):
-        self.link = link
-        self.motors = {}
-        self.motor_msg_period = None
-    
-    def init_motors(self, msg_period=0.01):
-        self.motor_msg_period = msg_period
-        class_path = '/sys/class/tacho-motor'
-        for path in self.link.dir(class_path).split():
-            if path.startswith('motor'):
-                port = self.link.read('%s/%s/port_name' % (class_path, path))
-                self.link.write('%s/%s/command' % (class_path, path),
-                                'run-direct')
-                assert port.startswith('out')
-                port = port[3]
-
-                self.motors[port] = '%s/%s' % (class_path, path)
-
-    def set_motor(self, **kwargs):
-        for port, value in kwargs.items():
-            value = '%d' % max(min(int(value * 100),100),-100)
-            self.link.write('%s/duty_cycle_sp' % self.motors[port],
-                            data=value, msg_period=self.motor_msg_period)
-
-    def close(self):
-        for path in self.motors.values():
-            self.link.write('%s/duty_cycle_sp' % path, data='0', blocking=True)
-
-
-
 if __name__ == '__main__':
     import ev3_nengo.ev3link
 
@@ -132,8 +103,6 @@ if __name__ == '__main__':
         t.append(time.time()-start)
         print data[-1]
     print 'elapsed', time.time()-start
-
-    motor.stop()
 
     import pylab
     pylab.plot(t, data)

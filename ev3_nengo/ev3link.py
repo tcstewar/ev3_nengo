@@ -20,11 +20,30 @@ class EV3Link(object):
         self.condition = threading.Condition()
         self.msg_times = {}
         self.msg_results = {}
+        self.last_msg_time = timeit.default_timer()
 
         self.thread = threading.Thread(target=self.run)
         self.thread.daemon = True
         self.thread.start()
 
+        self.no_message_thread = None
+        self.no_message_handlers = []
+
+    def on_no_message(self, function):
+        if self.no_message_thread is None:
+            self.no_message_thread = threading.Thread(target=self.no_message)
+            self.no_message_thread.daemon = True
+            self.no_message_thread.start()
+        self.no_message_handlers.append(function)
+
+    def no_message(self):
+        while True:
+            now = timeit.default_timer()
+            if now > self.last_message_time + 0.5:
+                for handler in self.no_message_handlers:
+                    handler()
+                self.last_message_time = now
+            time.sleep(0.1)
 
     def wait_for_connection(self):
         while self.ev3_addr is None:
@@ -51,9 +70,12 @@ class EV3Link(object):
         if self.ev3_addr is None:
             print 'Still looking for EV3'
             return
+
+        now = timeit.default_timer()
+        self.last_message_time = now
+
         if msg_period is not None:
             last_time = self.msg_times.get(fn, None)
-            now = timeit.default_timer()
             if last_time is not None and now < last_time + msg_period:
                 return
             self.msg_times[fn] = now
