@@ -68,7 +68,7 @@ class EV3Link(object):
 
     def send(self, type, index, fn, data_len=None, data=None, msg_period=None):
         if self.ev3_addr is None:
-            print 'Still looking for EV3'
+            print('Still looking for EV3')
             return
 
         now = timeit.default_timer()
@@ -84,9 +84,9 @@ class EV3Link(object):
             data_len = len(data)
 
         header = struct.pack('HHHH', type, index, len(fn)+1, data_len)
-        message = header + fn + '\x00'
+        message = header + fn.encode() + b'\x00'
         if data is not None:
-            message = message + data
+            message = message + data.encode()
         self.socket.sendto(message, self.ev3_addr)
 
     def request(self, type, fn, data=None, data_len=None, blocking=True,
@@ -123,9 +123,9 @@ class EV3Link(object):
 
 
 if __name__ == '__main__':
-    link = EV3Link('10.42.0.3')
+    link = EV3Link('192.168.0.103')
     link.wait_for_connection()
-    print link.dir('/sys/class/tacho-motor')
+    print(link.dir('/sys/class/tacho-motor'))
     link.write('/sys/class/tacho-motor/motor0/command', 'run-direct')
 
     data = []
@@ -139,7 +139,7 @@ if __name__ == '__main__':
         value = '%d' % (30 * math.sin(t*math.pi*2))
         link.write('/sys/class/tacho-motor/motor0/duty_cycle_sp', data=value)
         time.sleep(0.0001)
-    print time.time() - now
+    print(time.time() - now)
 
     time.sleep(0.1)
     link.write('/sys/class/tacho-motor/motor0/duty_cycle_sp', data='0')

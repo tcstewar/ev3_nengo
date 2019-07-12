@@ -86,12 +86,12 @@ class TachoMotor(Motor):
 if __name__ == '__main__':
     import ev3_nengo.ev3link
 
-    ev3 = ev3_nengo.ev3link.EV3Link('10.42.0.3')
+    ev3 = ev3_nengo.ev3link.EV3Link('192.168.0.103')
     ev3.wait_for_connection()
 
     motor = TachoMotor('A', ev3, msg_period=0.1)
-    irprox = IRProx(1, ev3, msg_period=0.1)
-    us = Ultrasonic(3, ev3, msg_period=0.1)
+    #irprox = IRProx(1, ev3, msg_period=0.1)
+    #us = Ultrasonic(3, ev3, msg_period=0.1)
 
     data = []
     t = []
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     start = time.time()
     while time.time() - start < 3:
         motor.set_power((time.time()-start) % 1.0)
-        data.append((irprox.read(), us.read()))
+        #data.append((irprox.read(), us.read()))
         t.append(time.time()-start)
         print data[-1]
     print 'elapsed', time.time()-start
